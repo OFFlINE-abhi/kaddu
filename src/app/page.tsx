@@ -1,22 +1,25 @@
 "use client";
-import Navbar from "./component/Navbar";
-import Hero from "./component/Hero";
-import Projects from "./component/Projects";
-import About from "./component/About";
-import Contact from "./component/Contact";
-import Footer from "./component/Footer";
+
+import Navbar from "@/components/layout/Navbar";
+import Hero from "../components/sections/Hero";
+import Projects from "../components/sections/Projects";
+import About from "../components/sections/About";
+import Contact from "../components/sections/Contact";
+import Footer from "../components/layout/Footer";
 import { motion } from "framer-motion";
 
 export default function Home() {
   return (
-    <div className="bg-black text-white">
+    <div className="relative bg-black text-white overflow-x-hidden">
       {/* Glassmorphism Navbar */}
       <Navbar />
 
-      {/* Background Effect */}
-      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#8A2BE2] via-[#4B0082] to-[#1B0032] opacity-90 blur-2xl" />
-      {/* Hero Section with Animation */}
+      {/* Background Glow Effect */}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-br from-purple-600 via-indigo-900 to-black opacity-70 blur-3xl" />
+
+      {/* Hero Section */}
       <motion.section
+        id="home"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1 }}
@@ -24,8 +27,9 @@ export default function Home() {
         <Hero />
       </motion.section>
 
-      {/* Projects Section with Scroll Effect */}
+      {/* Projects Section */}
       <motion.section
+        id="projects"
         initial={{ opacity: 0, y: 50 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
@@ -34,8 +38,9 @@ export default function Home() {
         <Projects />
       </motion.section>
 
-      {/* About Section with a Cool Fade Effect */}
+      {/* About Section */}
       <motion.section
+        id="about"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 1 }}
@@ -44,8 +49,9 @@ export default function Home() {
         <About />
       </motion.section>
 
-      {/* Contact Section with a Smooth Entry */}
+      {/* Contact Section */}
       <motion.section
+        id="contact"
         initial={{ scale: 0.8, opacity: 0 }}
         whileInView={{ scale: 1, opacity: 1 }}
         transition={{ duration: 1 }}

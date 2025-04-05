@@ -1,14 +1,15 @@
-import "./styles/globals.css";
-import Navbar from "./component/Navbar";
+// src/app/layout.tsx
+import "../styles/globals.css"; // ✅ Correct relative import
+import Navbar from "@/components/layout/Navbar"; // ✅ Updated path
 import { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("http://localhost:3000"), // ✅ Replace with your domain
+  metadataBase: new URL("http://localhost:3000"), // Replace with your deployed domain
   title: "Kaddu's Portfolio",
   description: "Web Developer | Nautical Science Student | Dreaming Big",
   openGraph: {
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/hero-image.jpg", // ✅ Make sure this image exists in your public/ folder
+        url: "/hero-image.jpg",
         width: 1200,
         height: 630,
         alt: "Kaddu's Portfolio Hero",
@@ -36,12 +37,6 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="icon" href="/favicon.ico" />
-        <title>Kaddu's Portfolio</title>
-      </head>
       <body className={`${inter.className} bg-gray-950 text-white`}>
         <Navbar />
 
@@ -50,6 +45,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer className="text-center p-4 bg-black/20 mt-10 text-sm">
           © {new Date().getFullYear()} Kaddu's Portfolio. All rights reserved.
         </footer>
+
+        {/* Optional Vercel tools */}
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

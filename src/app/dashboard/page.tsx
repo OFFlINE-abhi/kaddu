@@ -2,113 +2,97 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
-import { motion } from "framer-motion";
-import { Card } from "@/components/ui/Card";
-import { FiLogOut, FiSettings, FiGrid, FiTrendingUp, FiUser } from "react-icons/fi";
+import { getAuth, onAuthStateChanged, User } from "firebase/auth";
+
+import Clock from "@/components/dashboard/Clock";
+import Sidebar from "@/components/layout/Sidebar";
+import QuickActions from "@/components/dashboard/QuickActions";
+import FeedbackModal from "@/components/dashboard/FeedbackModal";
+import ScheduleModal from "@/components/dashboard/ScheduleModal";
+import Assist from "@/components/dashboard/Assist";
+
+import { tabIcons } from "@/lib/constants";
 
 export default function Dashboard() {
-  const router = useRouter();
-  const auth = getAuth();
   const [user, setUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<keyof typeof tabIcons>("Overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [betaAccess, setBetaAccess] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (!currentUser) {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
         router.push("/login");
       } else {
-        setUser(currentUser);
+        setUser(user);
       }
     });
 
     return () => unsubscribe();
   }, [router]);
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/login");
+  const renderContent = () => {
+    switch (activeTab) {
+      case "Overview":
+        return <div className="p-6">Welcome to the Dashboard Overview!</div>;
+      case "Analytics":
+        return <div className="p-6">Analytics data will appear here.</div>;
+      case "Settings":
+        return <div className="p-6">Adjust your settings here.</div>;
+      case "Profile":
+        return <div className="p-6">This is your profile page.</div>;
+      default:
+        return null;
+    }
   };
 
-  if (!user) return <p className="text-white text-center mt-10">Loading...</p>;
+  if (!user) return null;
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-[#6a0dad] to-black text-white">
-      {/* Sidebar */}
-      <motion.aside 
-        initial={{ x: -100, opacity: 0 }} 
-        animate={{ x: 0, opacity: 1 }} 
-        transition={{ duration: 0.5 }}
-        className="w-64 bg-black/30 backdrop-blur-lg p-6 fixed h-full border-r border-white/20"
-      >
-        <h2 className="text-2xl font-bold mb-6">Dashboard</h2>
-        <nav className="space-y-4">
-          <a href="#" className="flex items-center gap-2 p-2 hover:bg-white/10 rounded-lg">
-            <FiGrid /> Overview
-          </a>
-          <a href="#" className="flex items-center gap-2 p-2 hover:bg-white/10 rounded-lg">
-            <FiTrendingUp /> Analytics
-          </a>
-          <a href="#" className="flex items-center gap-2 p-2 hover:bg-white/10 rounded-lg">
-            <FiSettings /> Settings
-          </a>
-        </nav>
-        <button onClick={handleLogout} className="mt-10 flex items-center gap-2 p-2 bg-red-600 hover:bg-red-700 rounded-lg w-full">
-          <FiLogOut /> Logout
-        </button>
-      </motion.aside>
+    <div className="flex h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+      <Sidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        user={user}
+      />
 
-      {/* Main Content */}
-      <motion.div
-        className="flex-1 ml-64 p-10 pt-20"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        {/* Profile Header */}
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-4">
-            <img
-              src={user.photoURL || "/default-avatar.png"}
-              alt="Profile"
-              className="w-16 h-16 rounded-full border-2 border-white"
-            />
-            <div>
-              <h1 className="text-3xl font-bold">Welcome, {user.displayName || "User"} 👋</h1>
-              <p className="text-sm text-white/60">{user.email}</p>
-            </div>
-          </div>
+      <main className="flex-1 p-6 overflow-auto">
+        <div className="flex items-center justify-between mb-6">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="md:hidden p-2 bg-white/10 rounded-lg hover:bg-white/20 transition"
+          >
+            ☰
+          </button>
+          <Clock />
         </div>
 
-        {/* Dashboard Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="p-6 bg-white/10 backdrop-blur-lg hover:scale-105 transition-all duration-300 shadow-xl">
-            <h2 className="text-xl font-bold mb-2">🔥 Featured Templates</h2>
-            <p>Explore amazing UI components and pre-built sections.</p>
-          </Card>
-          <Card className="p-6 bg-white/10 backdrop-blur-lg hover:scale-105 transition-all duration-300 shadow-xl">
-            <h2 className="text-xl font-bold mb-2">📊 Analytics</h2>
-            <p>Track user activity, performance, and traffic.</p>
-          </Card>
-          <Card className="p-6 bg-white/10 backdrop-blur-lg hover:scale-105 transition-all duration-300 shadow-xl">
-            <h2 className="text-xl font-bold mb-2">🎨 Customization</h2>
-            <p>Make the dashboard truly yours with flexible UI options.</p>
-          </Card>
+        {renderContent()}
+
+        <div className="mt-6">
+          <QuickActions
+            setFeedbackOpen={setFeedbackOpen}
+            setScheduleOpen={setScheduleOpen}
+            betaAccess={betaAccess}
+            setBetaAccess={setBetaAccess}
+            notificationsEnabled={notificationsEnabled}
+            setNotificationsEnabled={setNotificationsEnabled}
+          />
         </div>
 
-        {/* Quick Actions */}
-        <h2 className="text-2xl font-bold mt-10 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <Card className="p-4 hover:scale-105 transition shadow-lg flex items-center gap-2">
-            <FiUser className="text-2xl" /> Profile
-          </Card>
-          <Card className="p-4 hover:scale-105 transition shadow-lg flex items-center gap-2">
-            <FiSettings className="text-2xl" /> Settings
-          </Card>
-          <Card className="p-4 hover:scale-105 transition shadow-lg flex items-center gap-2">
-            <FiTrendingUp className="text-2xl" /> Analytics
-          </Card>
-        </div>
-      </motion.div>
+        <Assist />
+      </main>
+
+      <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <ScheduleModal isOpen={scheduleOpen} onClose={() => setScheduleOpen(false)} />
     </div>
   );
 }

@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Local Netlify folder
+.netlify
+# Ignore Firebase files
+functions/
+firebase.json
+.firebaserc

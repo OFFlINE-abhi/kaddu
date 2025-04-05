@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
-import { app } from "../firebase";
+import { app } from "@/app/firebase";
 import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
