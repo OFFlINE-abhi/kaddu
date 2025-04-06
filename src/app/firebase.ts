@@ -1,9 +1,8 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
+import { initializeApp, getApps } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence, enableNetwork } from "firebase/firestore";
-import { getStorage } from "firebase/storage"; // ✅ Firebase Storage
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
-// 🚀 Firebase Configuration (Using Environment Variables)
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,35 +13,24 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// 🔄 Initialize Firebase App (Only if not already initialized)
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-
-// 🔑 Firebase Services
+// ✅ Prevent multiple initializations
+const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 const db = getFirestore(app);
-const storage = getStorage(app); // ✅ Initialized Firebase Storage
+const storage = getStorage(app);
 
-// 🔌 Enable Firestore Offline Persistence
-enableIndexedDbPersistence(db)
-  .then(() => console.log("✅ Firestore offline persistence enabled"))
-  .catch((err) => {
-    switch (err.code) {
-      case "failed-precondition":
-        console.warn("⚠ Firestore Persistence failed: Multiple tabs open.");
-        break;
-      case "unimplemented":
-        console.warn("⚠ Firestore Persistence is not supported on this browser.");
-        break;
-      default:
-        console.error("❌ Firestore Persistence Error:", err);
-    }
+// ✅ Enable Firestore Persistence Only in the Browser
+if (typeof window !== "undefined") {
+  import("firebase/firestore").then(({ enableIndexedDbPersistence, enableNetwork }) => {
+    enableIndexedDbPersistence(db).catch((err) => {
+      console.warn("⚠ Firestore Persistence Error:", err.code);
+    });
+
+    enableNetwork(db)
+      .then(() => console.log("✅ Firestore is online"))
+      .catch((error) => console.error("❌ Firestore reconnect failed:", error));
   });
+}
 
-// 🔄 Ensure Firestore reconnects if offline
-enableNetwork(db)
-  .then(() => console.log("✅ Firestore is online"))
-  .catch((error) => console.error("❌ Firestore failed to reconnect:", error));
-
-// 🌟 Export Firebase Services
 export { app, auth, provider, db, storage };
