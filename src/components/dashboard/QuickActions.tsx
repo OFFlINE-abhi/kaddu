@@ -8,8 +8,14 @@ interface QuickActionsProps {
   betaAccess: boolean;
   setBetaAccess: (val: boolean) => void;
   notificationsEnabled: boolean;
-  setNotificationsEnabled: (val: boolean) => void;
+  toggleNotifications: () => void;
 }
+
+const buttonVariants = {
+  initial: { opacity: 0, scale: 0.95 },
+  animate: { opacity: 1, scale: 1, transition: { delay: 0.2 } },
+  hover: { scale: 1.03 },
+};
 
 export default function QuickActions({
   setFeedbackOpen,
@@ -17,62 +23,76 @@ export default function QuickActions({
   betaAccess,
   setBetaAccess,
   notificationsEnabled,
-  setNotificationsEnabled,
+  toggleNotifications,
 }: QuickActionsProps) {
   return (
     <motion.div
       className="grid grid-cols-2 md:grid-cols-3 gap-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.2 }}
+      variants={buttonVariants}
+      initial="initial"
+      animate="animate"
     >
-      {/* Feedback */}
-      <button
+      {/* 📧 Feedback */}
+      <motion.button
+        whileHover="hover"
         onClick={() => setFeedbackOpen(true)}
-        className="bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="rounded-lg p-4 bg-card text-foreground hover:bg-muted/20 transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
+        title="Send Feedback"
         aria-label="Send Feedback"
       >
-        <h4 className="font-bold text-white mb-1">📧 Send Feedback</h4>
-        <p className="text-sm text-white/70">Let us know what you think.</p>
-      </button>
+        <h4 className="font-bold mb-1">📧 Send Feedback</h4>
+        <p className="text-sm opacity-70">Let us know what you think.</p>
+      </motion.button>
 
-      {/* Schedule */}
-      <button
+      {/* 📅 Schedule */}
+      <motion.button
+        whileHover="hover"
         onClick={() => setScheduleOpen(true)}
-        className="bg-zinc-800 rounded-lg p-4 hover:bg-zinc-700 transition text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="rounded-lg p-4 bg-card text-foreground hover:bg-muted/20 transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-left"
+        title="Schedule Meeting"
         aria-label="Schedule Meeting"
       >
-        <h4 className="font-bold text-white mb-1">📅 Schedule Meeting</h4>
-        <p className="text-sm text-white/70">Book a session with us.</p>
-      </button>
+        <h4 className="font-bold mb-1">📅 Schedule Meeting</h4>
+        <p className="text-sm opacity-70">Book a session with us.</p>
+      </motion.button>
 
-      {/* Beta Access */}
-      <button
+      {/* 🧪 Beta Access */}
+      <motion.button
+        whileHover="hover"
         onClick={() => setBetaAccess(!betaAccess)}
-        className={`rounded-lg p-4 transition text-left focus:outline-none focus:ring-2 focus:ring-green-500 ${
-          betaAccess ? "bg-green-700" : "bg-zinc-800 hover:bg-zinc-700"
+        className={`rounded-lg p-4 transition focus:outline-none focus:ring-2 focus:ring-green-500 text-left ${
+          betaAccess
+            ? "bg-green-600 text-white"
+            : "bg-card text-foreground hover:bg-muted/20"
         }`}
+        title="Toggle Beta Access"
         aria-label="Toggle Beta Access"
+        aria-pressed={betaAccess}
       >
-        <h4 className="font-bold text-white mb-1">🧪 Beta Access</h4>
-        <p className="text-sm text-white/70">
+        <h4 className="font-bold mb-1">🧪 Beta Access</h4>
+        <p className="text-sm opacity-70">
           {betaAccess ? "Access enabled" : "Get early features"}
         </p>
-      </button>
+      </motion.button>
 
-      {/* Notifications */}
-      <button
-        onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-        className={`rounded-lg p-4 transition text-left focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-          notificationsEnabled ? "bg-blue-700" : "bg-zinc-800 hover:bg-zinc-700"
+      {/* 🔔 Notifications */}
+      <motion.button
+        whileHover="hover"
+        onClick={toggleNotifications}
+        className={`rounded-lg p-4 transition focus:outline-none focus:ring-2 focus:ring-blue-500 text-left ${
+          notificationsEnabled
+            ? "bg-blue-600 text-white"
+            : "bg-card text-foreground hover:bg-muted/20"
         }`}
+        title="Toggle Notifications"
         aria-label="Toggle Notifications"
+        aria-pressed={notificationsEnabled}
       >
-        <h4 className="font-bold text-white mb-1">🔔 Notifications</h4>
-        <p className="text-sm text-white/70">
+        <h4 className="font-bold mb-1">🔔 Notifications</h4>
+        <p className="text-sm opacity-70">
           {notificationsEnabled ? "Enabled" : "Turn on alerts"}
         </p>
-      </button>
+      </motion.button>
     </motion.div>
   );
 }

@@ -1,20 +1,39 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
+import { tsParticles } from "@tsparticles/engine";
+import { loadFull } from "tsparticles";
+import Particles from "@tsparticles/react";
 
-import Clock from "@/components/dashboard/Clock";
+import LayoutWrapper from "@/components/dashboard/LayoutWrapper";
+import Header from "@/components/dashboard/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import SearchBar from "@/components/dashboard/SearchBar";
 import QuickActions from "@/components/dashboard/QuickActions";
 import FeedbackModal from "@/components/dashboard/FeedbackModal";
 import ScheduleModal from "@/components/dashboard/ScheduleModal";
-import Assist from "@/components/dashboard/Assist";
+import Assist from "@/components/tools/Assistant";
+import Clock from "@/components/dashboard/Clock";
+import DarkModeToggle from "@/components/dashboard/DarkModeToggle";
+import DropdownMenu from "@/components/dashboard/DropdownMenu";
+import LiveWeather from "@/components/dashboard/LiveWeather";
+import MotionWrapper from "@/components/dashboard/MotionWrapper";
+import ScientificCalculator from "@/components/tools/ScientificCalculator";
+
+// Importing tab components
+import Overview from "@/components/tabs/Overview";
+import Analytics from "@/components/tabs/Analytics";
+import Settings from "@/components/tabs/Settings";
+import Profile from "@/components/tabs/Profile";
 
 import { tabIcons } from "@/lib/constants";
 
 export default function Dashboard() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<keyof typeof tabIcons>("Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -22,77 +41,147 @@ export default function Dashboard() {
   const [betaAccess, setBetaAccess] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  const router = useRouter();
+  // ✅ Load Particles Effect Once
+  useEffect(() => {
+    loadFull(tsParticles).catch(console.error);
+  }, []);
 
+  // 🔐 Authentication Check with Loading State
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        router.push("/login");
-      } else {
-        setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+      if (!currentUser) {
+        router.replace("/login");
       }
     });
 
     return () => unsubscribe();
   }, [router]);
 
-  const renderContent = () => {
+  // 👤 Get First Name of User
+  const userFirstName = useMemo(() => user?.displayName?.split(" ")[0] || "Kaddu", [user]);
+
+  // 🛠️ Memoized Tab Renderer to Improve Performance
+  const renderActiveTab = useMemo(() => {
     switch (activeTab) {
       case "Overview":
-        return <div className="p-6">Welcome to the Dashboard Overview!</div>;
+        return <Overview />;
       case "Analytics":
-        return <div className="p-6">Analytics data will appear here.</div>;
+        return <Analytics />;
       case "Settings":
-        return <div className="p-6">Adjust your settings here.</div>;
+        return <Settings />;
       case "Profile":
-        return <div className="p-6">This is your profile page.</div>;
+        return <Profile />;
+      case "Calculator":
+        return <ScientificCalculator />;
       default:
-        return null;
+        return <Overview />;
     }
-  };
+  }, [activeTab]);
 
-  if (!user) return null;
+  // 🔔 Toggle Notifications
+  const toggleNotifications = useCallback(async () => {
+    if (!("Notification" in window)) {
+      alert("This browser does not support notifications.");
+      return;
+    }
+
+    try {
+      if (Notification.permission === "granted") {
+        setNotificationsEnabled((prev) => !prev);
+      } else if (Notification.permission !== "denied") {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+          setNotificationsEnabled(true);
+          new Notification("Notifications enabled!", { body: "You'll receive updates here." });
+        }
+      }
+    } catch (err) {
+      console.error("Notification error:", err);
+    }
+  }, []);
+
+  // 🕵️ Show Loading State Before Rendering
+  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-white">
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        user={user}
-      />
+    <LayoutWrapper>
+      {/* 🌌 Particle Background */}
+      <Particles id="tsparticles" options={particleOptions} className="absolute inset-0 z-0 pointer-events-none" />
 
-      <main className="flex-1 p-6 overflow-auto">
-        <div className="flex items-center justify-between mb-6">
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 bg-white/10 rounded-lg hover:bg-white/20 transition"
-          >
-            ☰
-          </button>
-          <Clock />
-        </div>
+      {/* 📚 Sidebar + Content Layout */}
+      <div className="flex h-screen w-full">
+        {/* Sidebar - Fixed Width */}
+        <Sidebar
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          user={user}
+        />
 
-        {renderContent()}
+        {/* 🧠 Main Content - Full Width */}
+        <main className="flex-1 p-6 overflow-auto bg-background text-foreground transition-colors duration-300">
+          <Header user={user} setSidebarOpen={setSidebarOpen} />
 
-        <div className="mt-6">
-          <QuickActions
-            setFeedbackOpen={setFeedbackOpen}
-            setScheduleOpen={setScheduleOpen}
-            betaAccess={betaAccess}
-            setBetaAccess={setBetaAccess}
-            notificationsEnabled={notificationsEnabled}
-            setNotificationsEnabled={setNotificationsEnabled}
-          />
-        </div>
+          {/* 👋 Welcome Section */}
+          <div className="flex justify-between items-center gap-4 mt-4 mb-6">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Hey {userFirstName} 👋</h1>
+              <p className="text-sm text-muted-foreground">Welcome back to your personalized dashboard!</p>
+            </div>
+            <div className="flex items-center gap-4 bg-card p-3 px-5 rounded-xl shadow-md">
+              <Clock />
+              <LiveWeather />
+              <DarkModeToggle />
+              <DropdownMenu user={user} />
+            </div>
+          </div>
 
-        <Assist />
-      </main>
+          {/* 🔍 Search Bar */}
+          <SearchBar />
 
+          {/* 🌟 Dynamic Content */}
+          <div className="mt-6">{renderActiveTab}</div>
+
+          {/* ⚡ Quick Actions */}
+          <div className="mt-6">
+            <MotionWrapper>
+              <QuickActions
+                setFeedbackOpen={setFeedbackOpen}
+                setScheduleOpen={setScheduleOpen}
+                betaAccess={betaAccess}
+                setBetaAccess={setBetaAccess}
+                notificationsEnabled={notificationsEnabled}
+                toggleNotifications={toggleNotifications}
+              />
+            </MotionWrapper>
+          </div>
+
+          {/* 🤖 Assistant */}
+          <Assist />
+        </main>
+      </div>
+
+      {/* 📥 Modals */}
       <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <ScheduleModal isOpen={scheduleOpen} onClose={() => setScheduleOpen(false)} />
-    </div>
+    </LayoutWrapper>
   );
 }
+
+// 🎇 Particle Background Configuration (Moved Outside JSX)
+const particleOptions = {
+  fullScreen: { enable: false },
+  background: { color: "transparent" },
+  particles: {
+    number: { value: 35 },
+    color: { value: "#00ffff" },
+    size: { value: 3 },
+    move: { enable: true, speed: 1.6 },
+    opacity: { value: 0.25 },
+    links: { enable: true, color: "#00ffff", distance: 130 },
+  },
+};

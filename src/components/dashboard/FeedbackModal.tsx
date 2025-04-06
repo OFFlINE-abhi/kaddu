@@ -14,7 +14,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
 
   const handleSend = () => {
     if (!feedback.trim()) {
-      toast.error("Please enter feedback before sending.");
+      toast.error("⚠️ Please enter feedback before sending.");
       return;
     }
 
@@ -27,7 +27,7 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center"
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -35,34 +35,38 @@ export default function FeedbackModal({ isOpen, onClose }: FeedbackModalProps) {
           role="dialog"
         >
           <motion.div
-            className="bg-zinc-900 p-6 rounded-xl shadow-xl w-[90%] max-w-lg"
-            initial={{ y: 100, opacity: 0 }}
+            initial={{ y: 60, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
+            exit={{ y: 60, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="w-full max-w-md bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl p-6 border border-border"
           >
-            <h2 className="text-xl font-bold mb-4 text-white">📧 Send Feedback</h2>
+            <h2 className="text-xl font-bold mb-4 text-zinc-900 dark:text-zinc-100">
+              📧 Send Feedback
+            </h2>
 
             <textarea
               placeholder="Type your feedback..."
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
-              className="w-full h-32 p-3 rounded-lg bg-zinc-800 text-white border border-zinc-700 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full h-32 resize-none p-3 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white border border-zinc-300 dark:border-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Feedback message"
             />
 
             <div className="flex justify-end mt-4 gap-3">
               <button
-                className="px-4 py-2 bg-zinc-700 text-white rounded-lg hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-zinc-400"
                 onClick={() => {
                   setFeedback("");
                   onClose();
                 }}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-white hover:bg-zinc-300 dark:hover:bg-zinc-600 transition"
               >
                 Cancel
               </button>
+
               <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
                 onClick={handleSend}
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition"
               >
                 Send
               </button>
