@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
+import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import { app } from "@/app/firebase";
 import { Menu, X, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -12,7 +12,7 @@ import { useTheme } from "next-themes";
 const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme(); // ✅ Dark Mode Control
+  const { theme, setTheme } = useTheme(); // Shared Theme State
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -26,13 +26,7 @@ const Navbar = () => {
     return () => unsubscribe();
   }, []);
 
-  if (!mounted) return null; // Prevent hydration errors
-
-  const handleLogout = async () => {
-    const auth = getAuth(app);
-    await signOut(auth);
-    router.push("/login");
-  };
+  if (!mounted) return null;
 
   const isDashboard = pathname.startsWith("/dashboard");
 
@@ -64,7 +58,7 @@ const Navbar = () => {
       className="fixed top-0 w-full bg-white/80 dark:bg-black/80 backdrop-blur-lg z-50 shadow-md px-6 py-4 transition-colors duration-500"
     >
       <div className="flex justify-between items-center max-w-6xl mx-auto">
-        {/* Portfolio Title */}
+        {/* Title */}
         <h1
           className="text-2xl font-bold text-gray-900 dark:text-white cursor-pointer"
           onClick={() => router.push(user ? "/dashboard" : "/")}
@@ -85,7 +79,16 @@ const Navbar = () => {
             </li>
           ))}
 
-          {!user && (
+          {user ? (
+            <li>
+              <button
+                onClick={() => router.push("/dashboard")}
+                className="bg-green-500 px-4 py-2 rounded-lg text-white font-semibold hover:bg-green-600 transition-all"
+              >
+                Dashboard
+              </button>
+            </li>
+          ) : (
             <li>
               <button
                 onClick={() => router.push("/login")}
@@ -96,18 +99,7 @@ const Navbar = () => {
             </li>
           )}
 
-          {user && !isDashboard && (
-            <li>
-              <button
-                onClick={handleLogout}
-                className="bg-red-500 px-4 py-2 rounded-lg text-white font-semibold hover:bg-red-600 transition-all"
-              >
-                Logout
-              </button>
-            </li>
-          )}
-
-          {/* 🌙 Dark Mode Toggle */}
+          {/* Theme Toggle */}
           <li>
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
@@ -119,7 +111,10 @@ const Navbar = () => {
         </ul>
 
         {/* Mobile Menu Toggle */}
-        <button className="md:hidden text-gray-900 dark:text-white" onClick={() => setMenuOpen(!menuOpen)}>
+        <button
+          className="md:hidden text-gray-900 dark:text-white"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
           {menuOpen ? <X size={30} /> : <Menu size={30} />}
         </button>
       </div>
@@ -143,7 +138,17 @@ const Navbar = () => {
             </Link>
           ))}
 
-          {!user && (
+          {user ? (
+            <button
+              onClick={() => {
+                router.push("/dashboard");
+                setMenuOpen(false);
+              }}
+              className="bg-green-500 px-4 py-2 rounded-lg text-white font-semibold hover:bg-green-600 transition-all"
+            >
+              Dashboard
+            </button>
+          ) : (
             <button
               onClick={() => {
                 router.push("/login");
@@ -155,19 +160,7 @@ const Navbar = () => {
             </button>
           )}
 
-          {user && !isDashboard && (
-            <button
-              onClick={() => {
-                handleLogout();
-                setMenuOpen(false);
-              }}
-              className="bg-red-500 px-4 py-2 rounded-lg text-white font-semibold hover:bg-red-600 transition-all"
-            >
-              Logout
-            </button>
-          )}
-
-          {/* 🌙 Dark Mode Toggle (Mobile) */}
+          {/* Theme Toggle Mobile */}
           <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="p-2 rounded-full bg-gray-300 dark:bg-gray-700 hover:scale-110 transition-all"

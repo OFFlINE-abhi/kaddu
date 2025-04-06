@@ -7,6 +7,7 @@ import { tsParticles } from "@tsparticles/engine";
 import { loadFull } from "tsparticles";
 import Particles from "@tsparticles/react";
 
+// 🔧 Layout Components
 import LayoutWrapper from "@/components/dashboard/LayoutWrapper";
 import Header from "@/components/dashboard/Header";
 import Sidebar from "@/components/layout/Sidebar";
@@ -14,20 +15,25 @@ import SearchBar from "@/components/dashboard/SearchBar";
 import QuickActions from "@/components/dashboard/QuickActions";
 import FeedbackModal from "@/components/dashboard/FeedbackModal";
 import ScheduleModal from "@/components/dashboard/ScheduleModal";
+import MotionWrapper from "@/components/dashboard/MotionWrapper";
+
+// 🛠️ Tools & Widgets
+import Notifications from "@/components/tools/Notifications";
+import Feedback from "@/components/tools/Feedback";
 import Assist from "@/components/tools/Assistant";
 import Clock from "@/components/dashboard/Clock";
 import DarkModeToggle from "@/components/dashboard/DarkModeToggle";
 import DropdownMenu from "@/components/dashboard/DropdownMenu";
 import LiveWeather from "@/components/dashboard/LiveWeather";
-import MotionWrapper from "@/components/dashboard/MotionWrapper";
 import ScientificCalculator from "@/components/tools/ScientificCalculator";
 
-// Importing tab components
+// 📊 Dashboard Tabs
 import Overview from "@/components/tabs/Overview";
 import Analytics from "@/components/tabs/Analytics";
 import Settings from "@/components/tabs/Settings";
 import Profile from "@/components/tabs/Profile";
 
+// 🚀 Constants
 import { tabIcons } from "@/lib/constants";
 
 export default function Dashboard() {
@@ -41,7 +47,7 @@ export default function Dashboard() {
   const [betaAccess, setBetaAccess] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
 
-  // ✅ Load Particles Effect Once
+  // ✅ Load Particles Effect Once (Better optimization)
   useEffect(() => {
     loadFull(tsParticles).catch(console.error);
   }, []);
@@ -49,61 +55,45 @@ export default function Dashboard() {
   // 🔐 Authentication Check with Loading State
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    return onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
-      if (!currentUser) {
-        router.replace("/login");
-      }
+      if (!currentUser) router.replace("/login");
     });
-
-    return () => unsubscribe();
   }, [router]);
 
-  // 👤 Get First Name of User
+  // 🛠️ Get First Name of User (Memoized for Performance)
   const userFirstName = useMemo(() => user?.displayName?.split(" ")[0] || "Kaddu", [user]);
 
-  // 🛠️ Memoized Tab Renderer to Improve Performance
+  // 🏠 Render Active Tab (Memoized)
   const renderActiveTab = useMemo(() => {
-    switch (activeTab) {
-      case "Overview":
-        return <Overview />;
-      case "Analytics":
-        return <Analytics />;
-      case "Settings":
-        return <Settings />;
-      case "Profile":
-        return <Profile />;
-      case "Calculator":
-        return <ScientificCalculator />;
-      default:
-        return <Overview />;
-    }
+    const components = {
+      Overview: <Overview />,
+      Analytics: <Analytics />,
+      Settings: <Settings />,
+      Profile: <Profile />,
+      Calculator: <ScientificCalculator />,
+    };
+
+    return components[activeTab] || <Overview />;
   }, [activeTab]);
 
-  // 🔔 Toggle Notifications
+  // 🔔 Toggle Notifications (Better permission handling)
   const toggleNotifications = useCallback(async () => {
-    if (!("Notification" in window)) {
-      alert("This browser does not support notifications.");
-      return;
-    }
+    if (!("Notification" in window)) return alert("This browser does not support notifications.");
 
-    try {
-      if (Notification.permission === "granted") {
-        setNotificationsEnabled((prev) => !prev);
-      } else if (Notification.permission !== "denied") {
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-          setNotificationsEnabled(true);
-          new Notification("Notifications enabled!", { body: "You'll receive updates here." });
-        }
+    if (Notification.permission === "granted") {
+      setNotificationsEnabled((prev) => !prev);
+    } else if (Notification.permission !== "denied") {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        setNotificationsEnabled(true);
+        new Notification("Notifications enabled!", { body: "You'll receive updates here." });
       }
-    } catch (err) {
-      console.error("Notification error:", err);
     }
   }, []);
 
-  // 🕵️ Show Loading State Before Rendering
+  // 🕵️ Show Loading Screen Before Rendering
   if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
 
   return (
@@ -113,17 +103,18 @@ export default function Dashboard() {
 
       {/* 📚 Sidebar + Content Layout */}
       <div className="flex h-screen w-full">
-        {/* Sidebar - Fixed Width */}
+        {/* 📌 Sidebar */}
         <Sidebar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
           activeTab={activeTab}
-          setActiveTab={setActiveTab}
+          setActiveTab={(tab) => setActiveTab(tab as keyof typeof tabIcons)}
           user={user}
         />
 
-        {/* 🧠 Main Content - Full Width */}
-        <main className="flex-1 p-6 overflow-auto bg-background text-foreground transition-colors duration-300">
+        {/* 📖 Main Content */}
+        <main className="flex flex-col flex-1 overflow-y-auto p-6 bg-background text-foreground transition-colors duration-300">
+          {/* 🏠 Header */}
           <Header user={user} setSidebarOpen={setSidebarOpen} />
 
           {/* 👋 Welcome Section */}
@@ -144,7 +135,7 @@ export default function Dashboard() {
           <SearchBar />
 
           {/* 🌟 Dynamic Content */}
-          <div className="mt-6">{renderActiveTab}</div>
+          <div className="flex-grow">{renderActiveTab}</div>
 
           {/* ⚡ Quick Actions */}
           <div className="mt-6">
@@ -162,6 +153,11 @@ export default function Dashboard() {
 
           {/* 🤖 Assistant */}
           <Assist />
+
+          {/* 📌 Footer */}
+          <footer className="mt-10 py-4 text-center text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
+            © {new Date().getFullYear()} Kaddu's Portfolio. All rights reserved.
+          </footer>
         </main>
       </div>
 
@@ -172,7 +168,7 @@ export default function Dashboard() {
   );
 }
 
-// 🎇 Particle Background Configuration (Moved Outside JSX)
+// 🎇 Particle Background Configuration
 const particleOptions = {
   fullScreen: { enable: false },
   background: { color: "transparent" },

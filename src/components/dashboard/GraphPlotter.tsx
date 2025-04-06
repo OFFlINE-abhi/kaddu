@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import {
   Chart as ChartJS,
   LineElement,
@@ -15,6 +15,7 @@ import zoomPlugin from "chartjs-plugin-zoom";
 import { Line } from "react-chartjs-2";
 import { evaluate } from "mathjs";
 
+// 📌 Register Chart.js components & plugins
 ChartJS.register(
   LineElement,
   PointElement,
@@ -23,7 +24,7 @@ ChartJS.register(
   Title,
   Tooltip,
   Legend,
-  zoomPlugin // 📌 Register zoom plugin
+  zoomPlugin
 );
 
 interface GraphProps {
@@ -32,41 +33,64 @@ interface GraphProps {
 
 export default function GraphPlotter({ expression }: GraphProps) {
   const chartRef = useRef<any>(null);
+  const [graphData, setGraphData] = useState<{
+    labels: number[];
+    datasets: {
+      label: string;
+      data: number[];
+      borderColor: string;
+      borderWidth: number;
+      backgroundColor: string;
+      pointRadius: number;
+      tension: number;
+    }[];
+  }>({ labels: [], datasets: [] });
 
-  // Generate points
-  const xValues: number[] = [];
-  const yValues: number[] = [];
-  for (let x = -10; x <= 10; x += 0.1) {
-    try {
-      const scope = { x };
-      const y = evaluate(expression, scope);
-      xValues.push(x);
-      yValues.push(typeof y === "number" ? y : NaN);
-    } catch {
-      xValues.push(x);
-      yValues.push(NaN);
-    }
-  }
+  // Function to generate graph data
+  const generateGraphData = useMemo(() => {
+    return () => {
+      const xValues: number[] = [];
+      const yValues: number[] = [];
 
-  const data = {
-    labels: xValues,
-    datasets: [
-      {
-        label: `f(x) = ${expression}`,
-        data: yValues,
-        fill: false,
-        borderColor: "#3b82f6",
-        tension: 0.1,
-        pointRadius: 0,
-      },
-    ],
-  };
+      for (let x = -10; x <= 10; x += 0.1) {
+        try {
+          const scope = { x };
+          const y = evaluate(expression, scope);
+          xValues.push(x);
+          yValues.push(typeof y === "number" ? y : NaN);
+        } catch {
+          xValues.push(x);
+          yValues.push(NaN);
+        }
+      }
+
+      return {
+        labels: xValues,
+        datasets: [
+          {
+            label: `f(x) = ${expression}`,
+            data: yValues,
+            borderColor: "#4ade80", // Green
+            borderWidth: 2,
+            backgroundColor: "rgba(74, 222, 128, 0.1)", // Transparent fill
+            pointRadius: 0,
+            tension: 0.2, // Smooth curves
+          },
+        ],
+      };
+    };
+  }, [expression]);
+
+  // Update graph data on expression change
+  useEffect(() => {
+    setGraphData(generateGraphData());
+  }, [expression, generateGraphData]);
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
-      legend: { display: true },
+      legend: { display: true, labels: { color: "#ffffff" } },
       tooltip: { enabled: true },
       zoom: {
         pan: {
@@ -86,26 +110,28 @@ export default function GraphPlotter({ expression }: GraphProps) {
     },
     scales: {
       x: {
-        title: { display: true, text: "x" },
+        title: { display: true, text: "x", color: "#ffffff" },
+        grid: { color: "rgba(255, 255, 255, 0.1)" },
+        ticks: { color: "#ffffff" },
       },
       y: {
-        title: { display: true, text: "f(x)" },
+        title: { display: true, text: "f(x)", color: "#ffffff" },
+        grid: { color: "rgba(255, 255, 255, 0.1)" },
+        ticks: { color: "#ffffff" },
       },
     },
   };
 
-  // Reset zoom button (optional)
+  // Reset Zoom Function
   const handleResetZoom = () => {
-    if (chartRef.current) {
-      chartRef.current.resetZoom();
-    }
+    if (chartRef.current) chartRef.current.resetZoom();
   };
 
   return (
-    <div className="bg-zinc-900 mt-4 p-4 rounded-lg shadow-md">
-      <div className="text-white font-semibold mb-2">Graph</div>
+    <div className="bg-zinc-900 mt-4 p-5 rounded-lg shadow-md">
+      <div className="text-white font-semibold mb-2">📊 Graph</div>
       <div className="h-64">
-        <Line ref={chartRef} data={data} options={options as any} />
+        <Line ref={chartRef} data={graphData as any} options={options as any} />
       </div>
       <button
         onClick={handleResetZoom}

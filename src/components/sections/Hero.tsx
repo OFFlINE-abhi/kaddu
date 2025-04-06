@@ -66,7 +66,6 @@ const Hero = () => {
         transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
         className={`absolute bottom-10 ${secondaryTextColor} text-sm`}
       >
-        Scroll Down ↓
       </motion.div>
     </section>
   );

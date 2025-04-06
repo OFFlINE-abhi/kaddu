@@ -6,25 +6,33 @@ import {
   GoogleAuthProvider,
   getAuth,
   onAuthStateChanged,
+  signOut,
+  User,
 } from "firebase/auth";
-import { app } from "../firebase";
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
-import ReCaptcha from "@/components/ReCaptcha/ReCAPTCHA"; // Make sure this path is correct
+import { app } from "../firebase";
+import ReCaptcha from "@/components/ReCaptcha/ReCAPTCHA"; // Ensure correct import path
 
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [verified, setVerified] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
 
   useEffect(() => {
-    const auth = getAuth(app);
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
         router.push("/dashboard");
       }
     });
+
     return () => unsubscribe();
   }, [router]);
 
@@ -35,35 +43,44 @@ export default function LoginPage() {
     }
 
     setLoading(true);
-    const provider = new GoogleAuthProvider();
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+    provider.setCustomParameters({ prompt: "select_account" });
 
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+
       const userRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
-        // First-time user
         await setDoc(userRef, {
           name: user.displayName,
           email: user.email,
           photoURL: user.photoURL,
           createdAt: new Date(),
         });
-        alert(`🎉 Welcome ${user.displayName}! Thanks for joining!`);
+        alert(`🎉 Welcome, ${user.displayName}! Thanks for joining!`);
       } else {
         alert(`👋 Welcome back, ${user.displayName}!`);
       }
 
       router.push("/dashboard");
-    } catch (error) {
-      console.error("Login Failed:", error);
-      alert("Login failed. Please try again.");
+    } catch (error: any) {
+      console.error("Login Failed:", error.message);
+      alert(`Login failed: ${error.message}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      alert("✅ Logged out successfully.");
+    } catch (error: any) {
+      console.error("Logout Failed:", error.message);
+      alert(`Logout failed: ${error.message}`);
     }
   };
 
@@ -80,14 +97,23 @@ export default function LoginPage() {
         {/* reCAPTCHA */}
         <ReCaptcha onVerify={() => setVerified(true)} />
 
-        <button
-          onClick={handleLogin}
-          aria-label="Sign in with Google"
-          className="bg-white text-black px-6 py-2 mt-4 rounded-full font-semibold hover:bg-gray-200 transition-all hover:scale-105 hover:shadow-xl disabled:opacity-60"
-          disabled={loading}
-        >
-          {loading ? "Signing in..." : "Sign in with Google"}
-        </button>
+        {user ? (
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 text-white px-6 py-2 mt-4 rounded-full font-semibold hover:bg-red-600 transition-all hover:scale-105 hover:shadow-xl"
+          >
+            Logout
+          </button>
+        ) : (
+          <button
+            onClick={handleLogin}
+            aria-label="Sign in with Google"
+            className="bg-white text-black px-6 py-2 mt-4 rounded-full font-semibold hover:bg-gray-200 transition-all hover:scale-105 hover:shadow-xl disabled:opacity-60"
+            disabled={loading}
+          >
+            {loading ? "Signing in..." : "Sign in with Google"}
+          </button>
+        )}
       </div>
     </motion.main>
   );

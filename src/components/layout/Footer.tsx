@@ -124,7 +124,7 @@ export default function Footer() {
                 kaddu@example.com
               </a>
             </li>
-            <li>📞 +1 (234) 567-890</li>
+            <li>📞 +91 8948624603</li>
           </ul>
         </div>
 
