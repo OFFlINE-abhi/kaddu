@@ -7,52 +7,41 @@ import { tsParticles } from "@tsparticles/engine";
 import { loadFull } from "tsparticles";
 import Particles from "@tsparticles/react";
 
-// 🔧 Layout Components
+// 📌 Layout Components
 import LayoutWrapper from "@/components/dashboard/LayoutWrapper";
 import Header from "@/components/dashboard/Header";
 import Sidebar from "@/components/layout/Sidebar";
-import SearchBar from "@/components/dashboard/SearchBar";
-import QuickActions from "@/components/dashboard/QuickActions";
-import FeedbackModal from "@/components/dashboard/FeedbackModal";
-import ScheduleModal from "@/components/dashboard/ScheduleModal";
 import MotionWrapper from "@/components/dashboard/MotionWrapper";
 
-// 🛠️ Tools & Widgets
-import Notifications from "@/components/tools/Notifications";
-import Feedback from "@/components/tools/Feedback";
+// 🛠️ Dashboard Features
+import SearchBar from "@/components/dashboard/SearchBar";
+import QuickActions from "@/components/dashboard/QuickActions";
 import Assist from "@/components/tools/Assistant";
-import Clock from "@/components/dashboard/Clock";
 import DarkModeToggle from "@/components/dashboard/DarkModeToggle";
 import DropdownMenu from "@/components/dashboard/DropdownMenu";
 import LiveWeather from "@/components/dashboard/LiveWeather";
-import ScientificCalculator from "@/components/tools/ScientificCalculator";
+import Clock from "@/components/dashboard/Clock";
 
 // 📊 Dashboard Tabs
 import Overview from "@/components/tabs/Overview";
 import Analytics from "@/components/tabs/Analytics";
 import Settings from "@/components/tabs/Settings";
 import Profile from "@/components/tabs/Profile";
+import ScientificCalculator from "@/components/tools/ScientificCalculator";
+
+// 🔔 Modals
+import FeedbackModal from "@/components/dashboard/FeedbackModal";
+import ScheduleModal from "@/components/dashboard/ScheduleModal";
 
 // 🚀 Constants
 import { tabIcons } from "@/lib/constants";
 
-export default function Dashboard() {
-  const router = useRouter();
+// 🔥 Custom Hook for Authentication
+const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<keyof typeof tabIcons>("Overview");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [betaAccess, setBetaAccess] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const router = useRouter();
 
-  // ✅ Load Particles Effect Once (Better optimization)
-  useEffect(() => {
-    loadFull(tsParticles).catch(console.error);
-  }, []);
-
-  // 🔐 Authentication Check with Loading State
   useEffect(() => {
     const auth = getAuth();
     return onAuthStateChanged(auth, (currentUser) => {
@@ -62,10 +51,28 @@ export default function Dashboard() {
     });
   }, [router]);
 
-  // 🛠️ Get First Name of User (Memoized for Performance)
+  return { user, loading };
+};
+
+export default function Dashboard() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<keyof typeof tabIcons>("Overview");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [betaAccess, setBetaAccess] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+
+  // ✅ Load Particles Effect Once
+  useEffect(() => {
+    loadFull(tsParticles).catch(console.error);
+  }, []);
+
+  // 🛠️ Memoized First Name
   const userFirstName = useMemo(() => user?.displayName?.split(" ")[0] || "Kaddu", [user]);
 
-  // 🏠 Render Active Tab (Memoized)
+  // 🏠 Render Active Tab (Optimized with useMemo)
   const renderActiveTab = useMemo(() => {
     const components = {
       Overview: <Overview />,
@@ -74,11 +81,10 @@ export default function Dashboard() {
       Profile: <Profile />,
       Calculator: <ScientificCalculator />,
     };
-
     return components[activeTab] || <Overview />;
   }, [activeTab]);
 
-  // 🔔 Toggle Notifications (Better permission handling)
+  // 🔔 Handle Notifications
   const toggleNotifications = useCallback(async () => {
     if (!("Notification" in window)) return alert("This browser does not support notifications.");
 
@@ -93,15 +99,17 @@ export default function Dashboard() {
     }
   }, []);
 
-  // 🕵️ Show Loading Screen Before Rendering
-  if (loading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  // 🕵️ Show Loading Screen
+  if (loading) {
+    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  }
 
   return (
     <LayoutWrapper>
       {/* 🌌 Particle Background */}
       <Particles id="tsparticles" options={particleOptions} className="absolute inset-0 z-0 pointer-events-none" />
 
-      {/* 📚 Sidebar + Content Layout */}
+      {/* 📚 Dashboard Layout */}
       <div className="flex h-screen w-full">
         {/* 📌 Sidebar */}
         <Sidebar
