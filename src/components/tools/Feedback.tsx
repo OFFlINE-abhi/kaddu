@@ -10,10 +10,10 @@ export default function Feedback() {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
   const feedbackRef = useRef<HTMLDivElement>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleSubmit = () => {
     if (!text.trim()) return;
-
     setLoading(true);
     setTimeout(() => {
       toast.success("✅ Thanks for your feedback!");
@@ -23,12 +23,14 @@ export default function Feedback() {
     }, 1000);
   };
 
+  // Escape key to close
   useEffect(() => {
     const escHandler = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", escHandler);
     return () => window.removeEventListener("keydown", escHandler);
   }, []);
 
+  // Outside click to close
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (feedbackRef.current && !feedbackRef.current.contains(e.target as Node)) {
@@ -37,6 +39,16 @@ export default function Feedback() {
     };
     if (open) window.addEventListener("mousedown", handleClickOutside);
     return () => window.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  // Focus textarea on open
+  useEffect(() => {
+    if (open) {
+      textAreaRef.current?.focus();
+      document.body.style.overflow = "hidden"; // optional: disable scroll
+    } else {
+      document.body.style.overflow = ""; // restore scroll
+    }
   }, [open]);
 
   return (
@@ -57,24 +69,30 @@ export default function Feedback() {
             ref={feedbackRef}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="feedback-title"
+            aria-describedby="feedback-desc"
             initial={{ opacity: 0, scale: 0.95, y: -5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -5 }}
             transition={{ duration: 0.2 }}
-            className="absolute left-0 mt-2 z-50 w-full sm:w-72 bg-zinc-900 text-white border border-zinc-700 rounded-lg shadow-xl p-4 max-h-[60vh] overflow-auto"
+            className="absolute left-0 mt-2 z-50 w-full sm:w-72 bg-zinc-900 text-white border border-zinc-700 rounded-lg shadow-xl p-4 max-h-[60vh] overflow-auto backdrop-blur-sm bg-opacity-90"
           >
-            <h2 className="font-semibold mb-2">Send Feedback</h2>
+            <h2 id="feedback-title" className="font-semibold mb-2">
+              Send Feedback
+            </h2>
             <textarea
+              ref={textAreaRef}
               className="w-full h-24 p-2 rounded bg-zinc-800 text-sm text-white outline-none resize-none focus:ring-2 focus:ring-blue-500"
               placeholder="Your thoughts..."
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSubmit()}
+              rows={3}
             />
             <button
               onClick={handleSubmit}
               disabled={loading || !text.trim()}
-              className={`mt-2 w-full py-1 rounded text-sm transition ${
+              className={`mt-2 w-full py-1.5 rounded text-sm transition ${
                 loading || !text.trim()
                   ? "bg-gray-500 cursor-not-allowed"
                   : "bg-blue-500 hover:bg-blue-600 text-white"

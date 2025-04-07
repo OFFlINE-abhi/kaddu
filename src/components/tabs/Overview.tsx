@@ -2,9 +2,22 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { User, Activity, TrendingUp, Star, CalendarDays, Clock } from "lucide-react";
+import {
+  User,
+  Activity,
+  TrendingUp,
+  Star,
+  CalendarDays,
+  Clock,
+} from "lucide-react";
 import { db } from "@/app/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  orderBy,
+  limit,
+} from "firebase/firestore";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 
@@ -19,31 +32,60 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
   const [activityLog, setActivityLog] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
-  const highlights = [
-    { icon: <User className="text-blue-500" />, title: "New Users", value: "1,243" },
-    { icon: <Activity className="text-green-500" />, title: "Active Sessions", value: "87%" },
-    { icon: <TrendingUp className="text-purple-500" />, title: "Growth Rate", value: "24%" },
-    { icon: <Star className="text-yellow-500" />, title: "Feedback Score", value: "4.8/5" },
-  ];
+  const [stats, setStats] = useState({
+    newUsers: 0,
+    activeSessions: "Loading...",
+    growthRate: "Loading...",
+    feedbackScore: "Loading...",
+  });
 
   useEffect(() => {
-    async function fetchData() {
+    const fetchAllData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "activityLogs"));
-        const data: any[] = [];
-        querySnapshot.forEach((doc) => data.push(doc.data()));
-        setActivityLog(data);
-      } catch (error) {
-        console.error("Error fetching activity logs:", error);
-        setActivityLog([]);
+        // Fetch activity logs
+        const activitySnap = await getDocs(
+          query(collection(db, "activityLogs"), orderBy("timestamp", "desc"), limit(10))
+        );
+        const activity = activitySnap.docs.map((doc) => doc.data());
+        setActivityLog(activity);
+
+        // Fetch stats
+        const usersSnap = await getDocs(collection(db, "users"));
+        const feedbackSnap = await getDocs(collection(db, "feedback"));
+
+        const newUsersCount = usersSnap.size;
+        const feedbackScores = feedbackSnap.docs.map((doc) => doc.data().rating || 0);
+        const avgFeedback =
+          feedbackScores.length > 0
+            ? (feedbackScores.reduce((a, b) => a + b, 0) / feedbackScores.length).toFixed(1)
+            : "N/A";
+
+        // Dummy logic for other stats
+        const activeSessions = "89%"; // Replace with live session count logic if available
+        const growthRate = "26%"; // Replace with analytics comparison if available
+
+        setStats({
+          newUsers: newUsersCount,
+          activeSessions,
+          growthRate,
+          feedbackScore: `${avgFeedback}/5`,
+        });
+      } catch (err) {
+        console.error("Error loading dashboard:", err);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
-    fetchData();
+    fetchAllData();
   }, []);
+
+  const highlights = [
+    { icon: <User className="text-blue-500" />, title: "New Users", value: stats.newUsers },
+    { icon: <Activity className="text-green-500" />, title: "Active Sessions", value: stats.activeSessions },
+    { icon: <TrendingUp className="text-purple-500" />, title: "Growth Rate", value: stats.growthRate },
+    { icon: <Star className="text-yellow-500" />, title: "Feedback Score", value: stats.feedbackScore },
+  ];
 
   return (
     <motion.div
@@ -101,7 +143,10 @@ export default function Overview() {
               <p className="text-gray-600 dark:text-gray-400">No recent activity 🤷</p>
             ) : (
               activityLog.map((log, idx) => (
-                <div key={idx} className="p-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm">
+                <div
+                  key={idx}
+                  className="p-2 bg-white dark:bg-gray-700 rounded-lg shadow-sm"
+                >
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{log.title}</p>
                   <p className="text-xs text-gray-600 dark:text-gray-400">{log.timestamp}</p>
                 </div>
@@ -123,7 +168,10 @@ export default function Overview() {
             tileClassName="dark:bg-gray-800 dark:text-white"
           />
           <p className="text-sm mt-3 text-gray-600 dark:text-gray-400">
-            Selected Date: <span className="font-medium text-gray-900 dark:text-white">{selectedDate.toDateString()}</span>
+            Selected Date:{" "}
+            <span className="font-medium text-gray-900 dark:text-white">
+              {selectedDate.toDateString()}
+            </span>
           </p>
         </div>
       </div>

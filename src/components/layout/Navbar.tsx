@@ -12,13 +12,16 @@ import { useTheme } from "next-themes";
 const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
-  const { theme, setTheme } = useTheme(); // Shared Theme State
+  const { theme, setTheme, systemTheme } = useTheme();
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
+  // Ensures the theme only renders on the client side to avoid hydration issues
   useEffect(() => {
-    setMounted(true);
+    if (typeof window !== "undefined") {
+      setMounted(true);
+    }
     const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -26,9 +29,10 @@ const Navbar = () => {
     return () => unsubscribe();
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return null; // Prevent hydration mismatch error
 
   const isDashboard = pathname.startsWith("/dashboard");
+  const currentTheme = theme === "system" ? systemTheme : theme;
 
   const navLinks = user
     ? isDashboard
@@ -102,10 +106,10 @@ const Navbar = () => {
           {/* Theme Toggle */}
           <li>
             <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
               className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:scale-110 transition-all"
             >
-              {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+              {currentTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
             </button>
           </li>
         </ul>
@@ -162,10 +166,10 @@ const Navbar = () => {
 
           {/* Theme Toggle Mobile */}
           <button
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
             className="p-2 rounded-full bg-gray-300 dark:bg-gray-700 hover:scale-110 transition-all"
           >
-            {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+            {currentTheme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
           </button>
         </motion.div>
       )}

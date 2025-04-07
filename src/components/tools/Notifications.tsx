@@ -37,6 +37,15 @@ export default function Notifications() {
 
   const unreadCount = notifications?.filter((n) => !n.read).length || 0;
 
+  const markAllAsRead = () => {
+    setNotifications((prev) =>
+      prev.map((note) => ({
+        ...note,
+        read: true,
+      }))
+    );
+  };
+
   return (
     <div className="relative w-full">
       <button
@@ -56,34 +65,69 @@ export default function Notifications() {
         {open && (
           <motion.div
             ref={dropdownRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="notifications-title"
             initial={{ opacity: 0, scale: 0.95, y: -5 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -5 }}
             transition={{ duration: 0.2 }}
-            className="absolute left-0 mt-2 z-50 w-full sm:w-72 bg-zinc-900 text-white border border-zinc-700 rounded-xl shadow-lg p-4 max-h-[60vh] overflow-auto"
+            className="absolute left-0 mt-2 z-50 w-full sm:w-72 bg-zinc-900 bg-opacity-90 backdrop-blur-md text-white border border-zinc-700 rounded-xl shadow-lg p-4 max-h-[60vh] overflow-auto"
           >
-            <h2 className="font-semibold mb-2">Notifications</h2>
-            {Array.isArray(notifications) && notifications.length === 0 ? (
+            <div className="flex items-center justify-between mb-2">
+              <h2 id="notifications-title" className="font-semibold">
+                Notifications
+              </h2>
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs text-blue-400 hover:underline focus:outline-none"
+                >
+                  Mark all as read
+                </button>
+              )}
+            </div>
+
+            {notifications.length === 0 ? (
               <p className="text-sm text-zinc-400">No new notifications.</p>
             ) : (
-              <ul className="space-y-2 text-sm list-none">
-                {notifications?.map((note) => (
-                  <li key={note.id}>
-                    <motion.div
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.1 * note.id }}
-                      className="bg-zinc-800 hover:bg-zinc-700 p-3 rounded transition cursor-pointer flex justify-between items-center"
+              <motion.ul
+                initial="hidden"
+                animate="visible"
+                variants={{
+                  hidden: {},
+                  visible: {
+                    transition: {
+                      staggerChildren: 0.08,
+                    },
+                  },
+                }}
+                className="space-y-2 text-sm list-none"
+              >
+                {notifications.map((note) => (
+                  <motion.li
+                    key={note.id}
+                    variants={{
+                      hidden: { opacity: 0, x: -10 },
+                      visible: { opacity: 1, x: 0 },
+                    }}
+                  >
+                    <div
+                      className={`p-3 rounded transition cursor-pointer flex justify-between items-center ${
+                        note.read
+                          ? "bg-zinc-800 hover:bg-zinc-700"
+                          : "bg-blue-500/10 border border-blue-500/40 hover:bg-blue-500/20"
+                      }`}
                     >
                       <div>
                         <p className="font-medium">{note.title}</p>
                         <span className="text-xs text-zinc-400">{note.time}</span>
                       </div>
                       {!note.read && <span className="w-2 h-2 bg-blue-500 rounded-full" />}
-                    </motion.div>
-                  </li>
+                    </div>
+                  </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
             )}
           </motion.div>
         )}

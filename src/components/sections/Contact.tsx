@@ -31,7 +31,7 @@ export default function Contact() {
       </motion.p>
 
       <motion.form
-        action="https://formspree.io/f/xyzenoyb" // Replace with your Formspree form ID
+        action="https://formspree.io/f/xyzenoyb"
         method="POST"
         className="space-y-6 bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-300 dark:border-gray-700 transition-all duration-500"
         initial={{ opacity: 0, y: 30 }}
@@ -40,7 +40,7 @@ export default function Contact() {
         viewport={{ once: true }}
       >
         {/* Name Input */}
-        <div className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
+        <label className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
           <span className="px-3 text-lg text-purple-500 dark:text-purple-300">
             <FiUser />
           </span>
@@ -51,10 +51,10 @@ export default function Contact() {
             placeholder="Your Name"
             className="w-full p-3 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 transition-all"
           />
-        </div>
+        </label>
 
         {/* Email Input */}
-        <div className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
+        <label className="flex items-center bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
           <span className="px-3 text-lg text-purple-500 dark:text-purple-300">
             <FiMail />
           </span>
@@ -65,10 +65,10 @@ export default function Contact() {
             placeholder="Your Email"
             className="w-full p-3 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 transition-all"
           />
-        </div>
+        </label>
 
         {/* Message Input */}
-        <div className="flex items-start bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
+        <label className="flex items-start bg-gray-200 dark:bg-gray-700 rounded-md overflow-hidden">
           <span className="px-3 pt-3 text-lg text-purple-500 dark:text-purple-300">
             <FiMessageCircle />
           </span>
@@ -79,7 +79,7 @@ export default function Contact() {
             placeholder="Your Message"
             className="w-full p-3 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 transition-all"
           />
-        </div>
+        </label>
 
         {/* Submit Button */}
         <button

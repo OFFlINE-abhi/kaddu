@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { create, all } from "mathjs";
 import { motion } from "framer-motion";
 import { BsBackspace } from "react-icons/bs";
-import { Line } from "react-chartjs-2";
+import dynamic from "next/dynamic";
 import {
   Chart as ChartJS,
   LineElement,
@@ -15,20 +15,16 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import zoomPlugin from "chartjs-plugin-zoom";
 import clsx from "clsx";
 
-// Register Chart.js components
-ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
-  CategoryScale,
-  Title,
-  Tooltip,
-  Legend,
-  zoomPlugin
-);
+// Dynamically import Line chart for client-side only
+const Line = dynamic(() => import("react-chartjs-2").then((mod) => mod.Line), {
+  ssr: false,
+  loading: () => <p className="text-center text-sm text-gray-500">Loading chart...</p>,
+});
+
+// Register base chart components
+ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Title, Tooltip, Legend);
 
 const math = create(all, {
   number: "number",
@@ -40,8 +36,8 @@ export default function ScientificCalculator() {
   const [result, setResult] = useState("");
   const [history, setHistory] = useState<string[]>([]);
   const [isDegrees, setIsDegrees] = useState(false);
-
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isZoomReady, setIsZoomReady] = useState(false);
+  const [chartOptions, setChartOptions] = useState<any>(null);
   const chartRef = useRef<any>(null);
 
   useEffect(() => {
@@ -49,11 +45,53 @@ export default function ScientificCalculator() {
       if (e.key === "Enter") handleEvaluate();
       else if (e.key === "Backspace") handleBackspace();
       else if (e.key === "Escape") handleClear();
-      else if (/^[0-9+\-*/().^]$/.test(e.key)) handleClick(e.key);
+      else if (/^[0-9+\-*/().^x]$/.test(e.key)) handleClick(e.key);
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  useEffect(() => {
+    const loadZoomPlugin = async () => {
+      const zoomPlugin = (await import("chartjs-plugin-zoom")).default;
+      if (!ChartJS.registry.plugins.get(zoomPlugin.id)) {
+        ChartJS.register(zoomPlugin);
+      }
+
+      setChartOptions({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true },
+          zoom: {
+            pan: { enabled: true, mode: "xy" as const },
+            zoom: {
+              wheel: { enabled: true },
+              pinch: { enabled: true },
+              mode: "xy" as const,
+            },
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: "rgba(255,255,255,0.1)" },
+            ticks: { color: "#fff" },
+          },
+          y: {
+            grid: { color: "rgba(255,255,255,0.1)" },
+            ticks: { color: "#fff" },
+          },
+        },
+      });
+
+      setIsZoomReady(true);
+    };
+
+    if (typeof window !== "undefined") {
+      loadZoomPlugin();
+    }
   }, []);
 
   const handleClick = (value: string) => setInput((prev) => prev + value);
@@ -75,7 +113,7 @@ export default function ScientificCalculator() {
 
       const evalResult = math.evaluate(input, scope);
       setResult(evalResult.toString());
-      setHistory((prev) => [`${input} = ${evalResult}`, ...prev]);
+      setHistory((prev) => [`${input} = ${evalResult}`, ...prev.slice(0, 9)]);
     } catch {
       setResult("Error");
     }
@@ -91,7 +129,7 @@ export default function ScientificCalculator() {
       try {
         const y = math.evaluate(input.replace(/x/g, `(${x})`));
         xValues.push(x);
-        yValues.push(typeof y === "number" ? y : NaN);
+        yValues.push(Number.isFinite(y) ? y : NaN);
       } catch {
         xValues.push(x);
         yValues.push(NaN);
@@ -117,7 +155,7 @@ export default function ScientificCalculator() {
     "4", "5", "6", "*", "cos(",
     "1", "2", "3", "-", "tan(",
     "0", ".", "(", ")", "+",
-    "^", "sqrt(", "log10(", "log(", "="
+    "^", "sqrt(", "log10(", "log(", "x", "="
   ];
 
   return (
@@ -133,7 +171,7 @@ export default function ScientificCalculator() {
         <div className="text-2xl font-bold mt-2">{result}</div>
       </div>
 
-      {/* Angle Mode */}
+      {/* Mode toggle */}
       <button
         onClick={toggleAngleMode}
         className="mb-3 px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded-full text-sm"
@@ -141,14 +179,14 @@ export default function ScientificCalculator() {
         Mode: {isDegrees ? "Degrees" : "Radians"}
       </button>
 
-      {/* Buttons */}
+      {/* Button Grid */}
       <div className="grid grid-cols-5 gap-2 mb-4">
         {buttons.map((btn) => (
           <motion.button
             whileTap={{ scale: 0.95 }}
             key={btn}
             className={clsx(
-              "p-3 rounded font-semibold text-sm transition",
+              "p-3 rounded font-semibold text-sm transition min-h-[48px]",
               ["+", "-", "*", "/", "^", "="].includes(btn)
                 ? "bg-emerald-600 text-white hover:bg-emerald-500"
                 : ["sin(", "cos(", "tan(", "sqrt(", "log(", "log10("].includes(btn)
@@ -161,7 +199,6 @@ export default function ScientificCalculator() {
           </motion.button>
         ))}
 
-        {/* Backspace */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleBackspace}
@@ -170,7 +207,6 @@ export default function ScientificCalculator() {
           <BsBackspace /> Back
         </motion.button>
 
-        {/* Clear */}
         <motion.button
           whileTap={{ scale: 0.95 }}
           onClick={handleClear}
@@ -180,12 +216,15 @@ export default function ScientificCalculator() {
         </motion.button>
       </div>
 
-      {/* Graph Plotter */}
-      {input && (
+      {/* Graph */}
+      {input.includes("x") && isZoomReady && chartOptions && (
         <div className="bg-zinc-900 mt-4 p-4 rounded-lg shadow-md">
-          <div className="text-white font-semibold mb-2">Graph</div>
-          <div className="h-64">
-            <Line ref={chartRef} data={generateGraphData()} options={{ responsive: true }} />
+          <div className="text-white font-semibold mb-2">📈 Graph</div>
+          <p className="text-xs text-zinc-400 mb-2">f(x) shown from -10 to 10</p>
+          <div className="w-full overflow-x-auto">
+            <div className="min-w-[300px] h-64">
+              <Line ref={chartRef} data={generateGraphData()} options={chartOptions} />
+            </div>
           </div>
           <button
             onClick={() => chartRef.current?.resetZoom()}
@@ -201,8 +240,17 @@ export default function ScientificCalculator() {
         <div className="mt-4 bg-zinc-100 dark:bg-zinc-800 p-3 rounded max-h-40 overflow-auto text-sm font-mono text-zinc-700 dark:text-zinc-300">
           <h3 className="font-bold mb-2">🧾 History:</h3>
           {history.map((item, index) => (
-            <div key={index} className="mb-1 border-b border-zinc-300 dark:border-zinc-700 pb-1">
+            <div
+              key={index}
+              className="mb-1 border-b border-zinc-300 dark:border-zinc-700 pb-1 flex justify-between"
+            >
               {item}
+              <span
+                onClick={() => navigator.clipboard.writeText(item)}
+                className="text-blue-400 text-xs cursor-pointer hover:underline ml-2"
+              >
+                Copy
+              </span>
             </div>
           ))}
         </div>

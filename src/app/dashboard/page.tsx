@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { tsParticles } from "@tsparticles/engine";
 import { loadFull } from "tsparticles";
 import Particles from "@tsparticles/react";
@@ -33,46 +34,67 @@ import ScientificCalculator from "@/components/tools/ScientificCalculator";
 import FeedbackModal from "@/components/dashboard/FeedbackModal";
 import ScheduleModal from "@/components/dashboard/ScheduleModal";
 
+// 👑 Admin Panel Component
+import AdminPanel from "@/components/admin/AdminPanel";
+
+// 🧠 Meeting Features
+import MeetingScheduler from "@/components/tools/MeetingScheduler";
+import MeetingHistory from "@/components//tools/MeetingHistory";
+import JitsiMeetingComponent from "@/components/tools/JitsiMeetingComponent";
+
 // 🚀 Constants
 import { tabIcons } from "@/lib/constants";
 
-// 🔥 Custom Hook for Authentication
-const useAuth = () => {
+// 🔐 Firebase Role Logic Hook
+const useAuthWithRole = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     const auth = getAuth();
-    return onAuthStateChanged(auth, (currentUser) => {
+    const db = getFirestore();
+
+    return onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        router.replace("/login");
+        return;
+      }
+
       setUser(currentUser);
+
+      const roleRef = doc(db, "users", currentUser.uid);
+      const roleSnap = await getDoc(roleRef);
+      const role = roleSnap.exists() ? roleSnap.data()?.role || "user" : "user";
+
+      setRole(role);
       setLoading(false);
-      if (!currentUser) router.replace("/login");
     });
   }, [router]);
 
-  return { user, loading };
+  return { user, role, loading };
 };
 
 export default function Dashboard() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  const { user, role, loading } = useAuthWithRole();
   const [activeTab, setActiveTab] = useState<keyof typeof tabIcons>("Overview");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [betaAccess, setBetaAccess] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [showMeeting, setShowMeeting] = useState(false);
+  const [currentMeetingId, setCurrentMeetingId] = useState<string | null>(null);
 
-  // ✅ Load Particles Effect Once
+  const meetingSectionRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     loadFull(tsParticles).catch(console.error);
   }, []);
 
-  // 🛠️ Memoized First Name
   const userFirstName = useMemo(() => user?.displayName?.split(" ")[0] || "Kaddu", [user]);
 
-  // 🏠 Render Active Tab (Optimized with useMemo)
   const renderActiveTab = useMemo(() => {
     const components = {
       Overview: <Overview />,
@@ -84,34 +106,48 @@ export default function Dashboard() {
     return components[activeTab] || <Overview />;
   }, [activeTab]);
 
-  // 🔔 Handle Notifications
   const toggleNotifications = useCallback(async () => {
-    if (!("Notification" in window)) return alert("This browser does not support notifications.");
+    if (!("Notification" in window)) {
+      alert("This browser does not support notifications.");
+      return;
+    }
 
     if (Notification.permission === "granted") {
-      setNotificationsEnabled((prev) => !prev);
+      const updated = !notificationsEnabled;
+      setNotificationsEnabled(updated);
+
+      new Notification(`🔔 Notifications ${updated ? "enabled" : "disabled"}`, {
+        body: updated
+          ? "You'll now receive browser alerts."
+          : "You have disabled browser alerts.",
+      });
     } else if (Notification.permission !== "denied") {
       const permission = await Notification.requestPermission();
       if (permission === "granted") {
         setNotificationsEnabled(true);
-        new Notification("Notifications enabled!", { body: "You'll receive updates here." });
+        new Notification("🔔 Notifications enabled!", {
+          body: "You'll now receive browser alerts.",
+        });
       }
     }
-  }, []);
+  }, [notificationsEnabled]);
 
-  // 🕵️ Show Loading Screen
+  const handleScheduleClick = () => {
+    setScheduleOpen(true);
+    setTimeout(() => {
+      meetingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
+  };
+
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading...</div>;
   }
 
   return (
     <LayoutWrapper>
-      {/* 🌌 Particle Background */}
       <Particles id="tsparticles" options={particleOptions} className="absolute inset-0 z-0 pointer-events-none" />
 
-      {/* 📚 Dashboard Layout */}
       <div className="flex h-screen w-full">
-        {/* 📌 Sidebar */}
         <Sidebar
           sidebarOpen={sidebarOpen}
           setSidebarOpen={setSidebarOpen}
@@ -120,12 +156,9 @@ export default function Dashboard() {
           user={user}
         />
 
-        {/* 📖 Main Content */}
         <main className="flex flex-col flex-1 overflow-y-auto p-6 bg-background text-foreground transition-colors duration-300">
-          {/* 🏠 Header */}
           <Header user={user} setSidebarOpen={setSidebarOpen} />
 
-          {/* 👋 Welcome Section */}
           <div className="flex justify-between items-center gap-4 mt-4 mb-6">
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Hey {userFirstName} 👋</h1>
@@ -139,18 +172,23 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 🔍 Search Bar */}
           <SearchBar />
 
-          {/* 🌟 Dynamic Content */}
+          {role === "admin" && (
+            <div className="mb-6">
+              <MotionWrapper>
+                <AdminPanel />
+              </MotionWrapper>
+            </div>
+          )}
+
           <div className="flex-grow">{renderActiveTab}</div>
 
-          {/* ⚡ Quick Actions */}
           <div className="mt-6">
             <MotionWrapper>
               <QuickActions
                 setFeedbackOpen={setFeedbackOpen}
-                setScheduleOpen={setScheduleOpen}
+                setScheduleOpen={handleScheduleClick} // ← updated here
                 betaAccess={betaAccess}
                 setBetaAccess={setBetaAccess}
                 notificationsEnabled={notificationsEnabled}
@@ -159,24 +197,37 @@ export default function Dashboard() {
             </MotionWrapper>
           </div>
 
-          {/* 🤖 Assistant */}
+          {/* 🧠 Meeting Section */}
+          <div ref={meetingSectionRef} className="mt-10 space-y-6">
+            <MeetingScheduler />
+            <MeetingHistory />
+            {showMeeting && currentMeetingId && (
+              <JitsiMeetingComponent
+                roomName={currentMeetingId}
+                displayName={user?.displayName || "Guest"}
+                userId={user?.uid || "unknown"}
+                onMeetingEnd={() => {
+                  setShowMeeting(false);
+                  setCurrentMeetingId(null);
+                }}
+              />
+            )}
+          </div>
+
           <Assist />
 
-          {/* 📌 Footer */}
           <footer className="mt-10 py-4 text-center text-gray-600 dark:text-gray-400 border-t border-gray-200 dark:border-gray-700">
             © {new Date().getFullYear()} Kaddu's Portfolio. All rights reserved.
           </footer>
         </main>
       </div>
 
-      {/* 📥 Modals */}
       <FeedbackModal isOpen={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <ScheduleModal isOpen={scheduleOpen} onClose={() => setScheduleOpen(false)} />
     </LayoutWrapper>
   );
 }
 
-// 🎇 Particle Background Configuration
 const particleOptions = {
   fullScreen: { enable: false },
   background: { color: "transparent" },

@@ -6,16 +6,41 @@ import CustomInput from "@/components/ui/CustomInput";
 import CustomButton from "@/components/ui/CustomButton";
 import { Switch } from "@/components/ui/switch";
 import { UserCog, Bell, Lock, ShieldCheck } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { useTheme } from "next-themes";
 
 export default function Settings() {
   const [notifications, setNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [email, setEmail] = useState("kaddu@example.com");
   const [password, setPassword] = useState("");
+  const [updating, setUpdating] = useState(false);
 
-  // Animate on mount
+  const { setTheme, theme } = useTheme();
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
+    setTheme(darkMode ? "dark" : "light");
   }, [darkMode]);
+
+  const handlePasswordUpdate = async () => {
+    if (!password) {
+      toast.error("Please enter a new password.");
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      // Simulate API delay
+      await new Promise((res) => setTimeout(res, 1000));
+      setPassword("");
+      toast.success("Password updated successfully!");
+    } catch (err) {
+      toast.error("Failed to update password.");
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <motion.div
@@ -24,7 +49,6 @@ export default function Settings() {
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      {/* Page Title */}
       <motion.h2
         className="text-3xl font-extrabold mb-4 text-gray-900 dark:text-white"
         initial={{ y: -20, opacity: 0 }}
@@ -42,7 +66,6 @@ export default function Settings() {
         Manage your preferences, account settings, and configurations.
       </motion.p>
 
-      {/* Settings Sections */}
       <div className="space-y-6">
         {/* 🧑 Account Settings */}
         <motion.div
@@ -53,7 +76,13 @@ export default function Settings() {
             <UserCog className="w-5 h-5 text-blue-500" />
             Account Settings
           </h3>
-          <CustomInput type="email" label="Email Address" placeholder="Enter your email" />
+          <CustomInput
+            type="email"
+            label="Email Address"
+            placeholder="Enter your email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
         </motion.div>
 
         {/* 🔔 Notifications */}
@@ -94,7 +123,9 @@ export default function Settings() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <CustomButton className="mt-4 w-full">Update Password</CustomButton>
+            <CustomButton className="mt-4 w-full" disabled={updating} onClick={handlePasswordUpdate}>
+              {updating ? "Updating..." : "Update Password"}
+            </CustomButton>
           </motion.div>
         </motion.div>
 

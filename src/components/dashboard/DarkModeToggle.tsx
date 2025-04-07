@@ -1,7 +1,9 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { motion } from "framer-motion";
+import { Sun, Moon } from "lucide-react";
 
 export default function DarkModeToggle() {
   const { theme, setTheme } = useTheme();
@@ -11,14 +13,19 @@ export default function DarkModeToggle() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null; // Avoid hydration issues
+  if (!mounted) return null;
+
+  const isDark = theme === "dark";
 
   return (
-    <button
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-      className="p-2 rounded-full bg-gray-300 dark:bg-gray-800 shadow-md transition-transform transform hover:scale-110"
+    <motion.button
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      whileTap={{ scale: 0.9 }}
+      whileHover={{ rotate: 5 }}
+      className="p-2 rounded-full bg-zinc-200 dark:bg-zinc-700 text-zinc-800 dark:text-white shadow-md transition-colors"
+      aria-label="Toggle dark mode"
     >
-      {theme === "dark" ? "🌙" : "☀️"}
-    </button>
+      {isDark ? <Moon size={20} /> : <Sun size={20} />}
+    </motion.button>
   );
 }

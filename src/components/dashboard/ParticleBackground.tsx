@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback } from "react";
-import Particles from "react-tsparticles"; // ✅ correct import for v3+
-import { loadAll } from "tsparticles-all"; // ✅ correct loader for v3+
-import type { Engine } from "tsparticles-engine"; // ✅ correct type
+import Particles from "react-tsparticles";
+import { loadAll } from "tsparticles-all"; // ✅ Compatible with v3+
+import type { Engine } from "tsparticles-engine";
 
 export default function ParticleBackground() {
   const particlesInit = useCallback(async (engine: Engine) => {
-    await loadAll(engine); // ✅ loads all presets/features
+    await loadAll(engine); // ✅ Ensures compatibility
   }, []);
 
   return (
@@ -16,16 +16,38 @@ export default function ParticleBackground() {
       init={particlesInit}
       options={{
         fullScreen: { enable: false },
-        background: {
-          color: { value: "transparent" },
-        },
+        background: { color: "transparent" },
         particles: {
-          number: { value: 35 },
+          number: { value: 40, density: { enable: true, area: 800 } },
           color: { value: "#00ffff" },
-          size: { value: 3 },
-          move: { enable: true, speed: 1.6 },
-          opacity: { value: 0.25 },
-          links: { enable: true, color: "#00ffff", distance: 130 },
+          shape: { type: "circle" },
+          size: { value: { min: 1, max: 3 }, random: true },
+          move: {
+            enable: true,
+            speed: 1.2,
+            direction: "none",
+            random: false,
+            straight: false,
+            outModes: { default: "bounce" },
+          },
+          opacity: { value: 0.3, random: true },
+          links: {
+            enable: true,
+            distance: 120,
+            color: "#00ffff",
+            opacity: 0.2,
+            width: 1,
+          },
+        },
+        interactivity: {
+          events: {
+            onHover: { enable: true, mode: "repulse" },
+            onClick: { enable: true, mode: "push" },
+          },
+          modes: {
+            repulse: { distance: 100, duration: 0.4 },
+            push: { particles_nb: 4 },
+          },
         },
       }}
       className="absolute inset-0 z-0"

@@ -10,12 +10,18 @@ import {
   Title,
   Tooltip,
   Legend,
+  ChartOptions,
+  ChartData,
 } from "chart.js";
-import zoomPlugin from "chartjs-plugin-zoom";
 import { Line } from "react-chartjs-2";
+import { ChartJSOrUndefined } from "react-chartjs-2/dist/types";
 import { evaluate } from "mathjs";
 
-// 📌 Register Chart.js components & plugins
+interface GraphProps {
+  expression: string;
+}
+
+// Register Chart.js core components
 ChartJS.register(
   LineElement,
   PointElement,
@@ -23,32 +29,27 @@ ChartJS.register(
   CategoryScale,
   Title,
   Tooltip,
-  Legend,
-  zoomPlugin
+  Legend
 );
 
-interface GraphProps {
-  expression: string;
-}
-
 export default function GraphPlotter({ expression }: GraphProps) {
-  const chartRef = useRef<any>(null);
-  const [graphData, setGraphData] = useState<{
-    labels: number[];
-    datasets: {
-      label: string;
-      data: number[];
-      borderColor: string;
-      borderWidth: number;
-      backgroundColor: string;
-      pointRadius: number;
-      tension: number;
-    }[];
-  }>({ labels: [], datasets: [] });
+  const chartRef = useRef<ChartJSOrUndefined<"line">>(null);
+  const [graphData, setGraphData] = useState<ChartData<"line">>({
+    labels: [],
+    datasets: [],
+  });
 
-  // Function to generate graph data
+  // Safely load chartjs-plugin-zoom on client only
+  useEffect(() => {
+    const loadZoomPlugin = async () => {
+      const zoomPlugin = (await import("chartjs-plugin-zoom")).default;
+      ChartJS.register(zoomPlugin);
+    };
+    loadZoomPlugin();
+  }, []);
+
   const generateGraphData = useMemo(() => {
-    return () => {
+    return (): ChartData<"line"> => {
       const xValues: number[] = [];
       const yValues: number[] = [];
 
@@ -70,33 +71,29 @@ export default function GraphPlotter({ expression }: GraphProps) {
           {
             label: `f(x) = ${expression}`,
             data: yValues,
-            borderColor: "#4ade80", // Green
+            borderColor: "#4ade80",
             borderWidth: 2,
-            backgroundColor: "rgba(74, 222, 128, 0.1)", // Transparent fill
+            backgroundColor: "rgba(74, 222, 128, 0.1)",
             pointRadius: 0,
-            tension: 0.2, // Smooth curves
+            tension: 0.2,
           },
         ],
       };
     };
   }, [expression]);
 
-  // Update graph data on expression change
   useEffect(() => {
     setGraphData(generateGraphData());
   }, [expression, generateGraphData]);
 
-  const options = {
+  const options: ChartOptions<"line"> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: { display: true, labels: { color: "#ffffff" } },
       tooltip: { enabled: true },
       zoom: {
-        pan: {
-          enabled: true,
-          mode: "xy",
-        },
+        pan: { enabled: true, mode: "xy" },
         zoom: {
           wheel: { enabled: true },
           pinch: { enabled: true },
@@ -122,16 +119,15 @@ export default function GraphPlotter({ expression }: GraphProps) {
     },
   };
 
-  // Reset Zoom Function
   const handleResetZoom = () => {
-    if (chartRef.current) chartRef.current.resetZoom();
+    chartRef.current?.resetZoom();
   };
 
   return (
     <div className="bg-zinc-900 mt-4 p-5 rounded-lg shadow-md">
       <div className="text-white font-semibold mb-2">📊 Graph</div>
       <div className="h-64">
-        <Line ref={chartRef} data={graphData as any} options={options as any} />
+        <Line ref={chartRef} data={graphData} options={options} />
       </div>
       <button
         onClick={handleResetZoom}
