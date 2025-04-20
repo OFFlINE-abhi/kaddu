@@ -25,12 +25,16 @@ export default function AdminUsersPage() {
   }, [isAdmin]);
 
   const fetchUsers = async () => {
-    const snapshot = await getDocs(collection(db, "users"));
-    const userData = snapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    setUsers(userData);
+    try {
+      const snapshot = await getDocs(collection(db, "users"));
+      const userData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setUsers(userData);
+    } catch (error) {
+      toast.error("Failed to load users");
+    }
   };
 
   const handleDelete = async (userId: string) => {
@@ -64,10 +68,8 @@ export default function AdminUsersPage() {
     user.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading)
-    return <div className="text-white p-4">Checking admin status...</div>;
-  if (!isAdmin)
-    return <div className="text-red-400 p-4">Access denied.</div>;
+  if (loading) return <div className="p-4 text-white">Checking admin status...</div>;
+  if (!isAdmin) return <div className="p-4 text-red-500">Access denied.</div>;
 
   return (
     <div className="p-4 space-y-4 max-w-screen-xl mx-auto">
