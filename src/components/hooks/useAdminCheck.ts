@@ -1,7 +1,8 @@
+// src/hooks/useAdminCheck.ts
 import { useEffect, useState } from "react";
 import { onAuthStateChanged, getAuth } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/app/firebase";
+import { db } from "@/app/firebase"; // adjust path if needed
 
 export function useAdminCheck() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -11,20 +12,10 @@ export function useAdminCheck() {
     const auth = getAuth();
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        try {
-          const ref = doc(db, "users", user.uid);
-          const snap = await getDoc(ref);
-
-          const role = snap.exists() ? snap.data().role : null;
-          setIsAdmin(role === "admin");
-        } catch (err) {
-          console.error("Error checking admin role:", err);
-          setIsAdmin(false);
-        }
-      } else {
-        setIsAdmin(false);
+        const ref = doc(db, "users", user.uid);
+        const snap = await getDoc(ref);
+        setIsAdmin(snap.exists() && snap.data().role === "admin");
       }
-
       setLoading(false);
     });
 

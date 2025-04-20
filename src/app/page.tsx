@@ -150,14 +150,8 @@ export default function Home() {
           whileHover={{ scale: 1.15, rotate: -5 }}
           transition={{ type: "spring", stiffness: 200 }}
         >
-          <VoiceButton onResult={(text) => console.log("🎤 Final transcript:", text)} />
         </motion.div>
-        <motion.div
-          animate={{ scale: [1, 1.05, 1], opacity: [1, 0.9, 1] }}
-          transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-        >
-          <Assist />
-        </motion.div>
+        <Assist />
       </div>
     </motion.div>
   );

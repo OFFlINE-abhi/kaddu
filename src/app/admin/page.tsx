@@ -1,5 +1,7 @@
-// pages/admin.tsx or app/admin/page.tsx (depending on your routing)
-import AdminRouteGuard from "@/components/admin/AdminRouteGuard"; // If using auth protection
+// src/app/admin/page.tsx
+"use client";
+
+import AdminRouteGuard from "@/components/admin/AdminRouteGuard";
 import AdminDashboard from "@/components/admin/AdminDashboard";
 
 export default function AdminPage() {

@@ -1,6 +1,5 @@
 import "../styles/globals.css";
 import Navbar from "@/components/layout/Navbar";
-import { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -8,8 +7,9 @@ import ThemeProvider from "@/components/ui/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  metadataBase: new URL("https://kaddu.dev"), // ✅ Replace with your domain
+// Metadata should remain in the server-side context
+export const metadata = {
+  metadataBase: new URL("https://kaddu.dev"),
   title: "Kaddu's Portfolio",
   description: "Web Developer | Nautical Science Student | Dreaming Big",
   openGraph: {

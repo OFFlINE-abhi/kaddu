@@ -1,6 +1,7 @@
 "use client";
+
 import { ReactNode, HTMLAttributes } from "react";
-import { cn } from "@/lib/utils"; // Optional if you're using a `cn` utility for class merging
+import { cn } from "@/lib/utils"; // Optional utility for merging classNames
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -16,6 +17,19 @@ export function Card({ children, className = "", ...props }: CardProps) {
         className
       )}
     >
+      {children}
+    </div>
+  );
+}
+
+interface CardContentProps extends HTMLAttributes<HTMLDivElement> {
+  children: ReactNode;
+  className?: string;
+}
+
+export function CardContent({ children, className = "", ...props }: CardContentProps) {
+  return (
+    <div {...props} className={cn("p-4", className)}>
       {children}
     </div>
   );

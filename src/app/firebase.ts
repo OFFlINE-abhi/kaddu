@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics, isSupported as isAnalyticsSupported } from "firebase/analytics";
-import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getToken, onMessage } from "firebase/messaging";
 
 // ✅ Firebase config
 const firebaseConfig = {
@@ -47,21 +47,33 @@ if (typeof window !== "undefined") {
   });
 }
 
-// 🔥 Firebase Cloud Messaging (FCM)
-let messaging: ReturnType<typeof getMessaging> | null = null;
+// 🔥 Firebase Cloud Messaging (FCM) lazy init
+let messaging: ReturnType<typeof import("firebase/messaging").getMessaging> | null = null;
 
-if (typeof window !== "undefined" && "Notification" in window) {
-  messaging = getMessaging(app);
-}
+export const initMessaging = async () => {
+  if (typeof window === "undefined" || !("Notification" in window)) {
+    console.warn("🚫 Not in browser or notifications unsupported.");
+    return null;
+  }
+
+  if (messaging) return messaging;
+
+  try {
+    const { getMessaging } = await import("firebase/messaging");
+    messaging = getMessaging(app);
+    return messaging;
+  } catch (error) {
+    console.warn("⚠ Failed to initialize FCM:", error);
+    return null;
+  }
+};
 
 // ✅ Function to request notification permission and get FCM token
 export const requestNotificationPermission = async () => {
-  if (!messaging) {
-    console.warn("🚫 FCM is not available on this device/browser.");
-    return;
-  }
-
   if (typeof window === "undefined") return;
+
+  const msg = await initMessaging();
+  if (!msg) return;
 
   const permission = await Notification.requestPermission();
 
@@ -69,7 +81,7 @@ export const requestNotificationPermission = async () => {
     console.log("🔔 Notification permission granted.");
 
     try {
-      const token = await getToken(messaging, {
+      const token = await getToken(msg, {
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
       });
 
@@ -89,10 +101,11 @@ export const requestNotificationPermission = async () => {
 
 // ✅ Function to handle foreground messages
 export const onMessageListener = () =>
-  new Promise((resolve) => {
-    if (!messaging) return;
+  new Promise(async (resolve) => {
+    const msg = await initMessaging();
+    if (!msg) return;
 
-    onMessage(messaging, (payload) => {
+    onMessage(msg, (payload) => {
       console.log("📩 Foreground Push Notification Received:", payload);
       resolve(payload);
     });
