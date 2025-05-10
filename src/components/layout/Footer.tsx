@@ -121,7 +121,7 @@ export default function Footer() {
                 href="mailto:kaddu@example.com"
                 className="hover:text-indigo-500 dark:hover:text-indigo-400"
               >
-                kaddu@example.com
+                kaddu.web@gmail.com
               </a>
             </li>
             <li>📞 +91 8948624603</li>
@@ -167,10 +167,10 @@ export default function Footer() {
         <p>
           © {currentYear}{" "}
           <a
-            href="https://kaddu.dev"
+            href="https://kaddu.fun"
             className="text-indigo-500 dark:text-indigo-400 hover:underline"
           >
-            Kaddu.dev
+            Kaddu.fun
           </a>{" "}
           • Made with 💙
         </p>
